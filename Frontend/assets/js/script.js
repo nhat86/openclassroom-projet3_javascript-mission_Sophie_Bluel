@@ -1,9 +1,16 @@
-import { displayWorks,displayWorksModal, deleteWork } from "./works.js"; 
-import { getCategories, displayCategories, filterWorksByCategory} from "./categories.js"; 
-// gallery et categories filters
+import { displayWorks, displayWorksModal } from "./works.js"; 
+import { getCategories, displayCategories, filterWorksByCategory } from "./categories.js"; 
+
+// ----------------------------
+// INITIALISATION GALERIE
+// ----------------------------
 await displayCategories();
-displayWorks();
-displayWorksModal();
+await displayWorks();
+await displayWorksModal();
+
+// ----------------------------
+// FILTRE PAR CATEGORIE
+// ----------------------------
 const categoryButtons = document.querySelectorAll('.button-category-filter');
 categoryButtons.forEach(button => {
     button.addEventListener('click', () => {    
@@ -11,42 +18,48 @@ categoryButtons.forEach(button => {
         button.classList.add('active');
         filterWorksByCategory(button);
     });
-}); 
-// modal modifier gallery
-const body=document.querySelector('body');
-const button_modifier = document.querySelector('.button-modifier');
-const button_fermer1 = document.querySelector('.button-fermer1');
-const button_fermer2 = document.querySelector('.button-fermer2');
+});
+
+// ----------------------------
+// MODAL
+// ----------------------------
+const body = document.querySelector('body');
 const modal1 = document.querySelector('.modal1');
 const modal2 = document.querySelector('.modal2');
-button_modifier.addEventListener('click', () => {
-    modal1.style.display = 'block';
-    body.style.background = "rgba(0, 0, 0, 0.3)";
+
+const modalToggles = [
+    { btn: '.button-modifier', show: modal1 },
+    { btn: '.button-fermer1', hide: modal1 },
+    { btn: '.button-fermer2', hide: modal2 }
+];
+
+modalToggles.forEach(({ btn, show, hide }) => {
+    document.querySelector(btn).addEventListener('click', () => {
+        if (show) show.style.display = 'block';
+        if (hide) hide.style.display = 'none';
+        body.style.background = show ? "rgba(0,0,0,0.3)" : 'white';
+    });
 });
-button_fermer1.addEventListener('click', () => {
+
+// ----------------------------
+// MODAL AJOUT PHOTO
+// ----------------------------
+const buttonAjouter = document.querySelector('.button-ajoute-photo');
+const buttonRetour = document.querySelector('.retourne-modal1');
+
+buttonAjouter.addEventListener('click', () => {
     modal1.style.display = 'none';
-    body.style.background = 'white';
-});
-button_fermer2.addEventListener('click', () => {
-    modal2.style.display = 'none';
-    body.style.background = 'white';
-});
-// modal ajouter une photo
-const button_ajouter = document.querySelector('.button-ajoute-photo');
-const modal_ajouter = document.querySelector('.modal2');
-const button_retour = document.querySelector('.retourne-modal1');
-
-button_ajouter.addEventListener('click', () => {
-    modal1.style.display = 'none';
-    modal_ajouter.style.display = 'block';  
+    modal2.style.display = 'block';
 });
 
-button_retour.addEventListener('click', () => {
+buttonRetour.addEventListener('click', () => {
     modal2.style.display = 'none';
     modal1.style.display = 'block';
 });
 
-// affiche liste des categories dans le select du modal ajouter une photo
+// ----------------------------
+// SELECT CATEGORIES DANS MODAL
+// ----------------------------
 const selectCategory = document.querySelector('#select-category');
 const categories = await getCategories();
 categories.forEach(category => {
@@ -56,22 +69,34 @@ categories.forEach(category => {
     selectCategory.appendChild(option);
 });
 
-// gestion du formulaire d'ajout de photo
+// ----------------------------
+// FORMULAIRE AJOUT PHOTO
+// ----------------------------
 const form = document.querySelector('.form-ajouter-photo');
+const submitBtn = form.querySelector('input[type="submit"]');
+submitBtn.disabled = true;
+
+function checkFormValidity() {
+    const title = form.querySelector('#title').value.trim();
+    const file = form.querySelector('#photo').files[0];
+    const category = form.querySelector('#select-category').value;
+    submitBtn.disabled = !(title && file && category);
+}
+
+['#title', '#photo', '#select-category'].forEach(id => {
+    form.querySelector(id).addEventListener('input', checkFormValidity);
+    form.querySelector(id).addEventListener('change', checkFormValidity);
+});
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const fileInput = document.querySelector('#photo');
-    if (!fileInput.files[0]) {
-        alert("Choisissez un fichier !");
-        return;
-    }
+    const fileInput = form.querySelector('#photo');
+    if (!fileInput.files[0]) return alert("Choisissez un fichier !");
 
     const formData = new FormData();
     formData.append('image', fileInput.files[0]);
-    formData.append('title', document.querySelector('#title').value);
-    formData.append('category', parseInt(document.querySelector('#select-category').value));
+    formData.append('title', form.querySelector('#title').value);
+    formData.append('category', parseInt(selectCategory.value));
 
     try {
         const response = await fetch('http://localhost:5678/api/works', {
@@ -83,74 +108,61 @@ form.addEventListener('submit', async (e) => {
         });
 
         if (!response.ok) {
-            console.error("HTTP Error:", response.status);
-            const errorData = await response.text(); 
-            console.error("Server Response:", errorData);
+            const errorData = await response.text();
+            console.error("Erreur HTTP:", response.status, errorData);
             return;
         }
 
+        // Optionnel : recharger la galerie ou modal après ajout
+        displayWorks();
+        displayWorksModal();
+        form.reset();
+        submitBtn.disabled = true;
 
     } catch (error) {
-        console.error("Fetch Error:", error);
+        console.error("Erreur fetch:", error);
     }
 });
-// affiche img preview
+
+// ----------------------------
+// PREVIEW IMAGE
+// ----------------------------
 const input = document.getElementById("photo");
 const preview = document.getElementById("preview");
 
-input.addEventListener("change", function () {
-    const file = this.files[0];
+input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
 
-    if (file) {
-        const reader = new FileReader();
-
-        reader.addEventListener("load", function () {
-            preview.src = reader.result;
-            preview.style.width="50%"
-        });
-
-        reader.readAsDataURL(file);
-
-    }
+    const reader = new FileReader();
+    reader.onload = () => {
+        preview.src = reader.result;
+        preview.style.width = "30%";
+    };
+    reader.readAsDataURL(file);
 });
-// navbar login
-const isLoggedIn = localStorage.getItem("isLoggedIn");
 
+// ----------------------------
+// NAVBAR LOGIN / LOGOUT
+// ----------------------------
+const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 const login = document.querySelector(".login");
 
-if (isLoggedIn === "true") {
-  login.textContent = "logout";
-} else {
-  login.textContent = "login";
-}
+login.textContent = isLoggedIn ? "logout" : "login";
 login.addEventListener("click", () => {
-  if (localStorage.getItem("isLoggedIn") === "true") {
-    localStorage.removeItem("isLoggedIn");
-    window.location.reload();
-  } else {
-    window.location.href = "/Portfolio-architecte-sophie-bluel/FrontEnd/login.html";
-  }
-});
-// action apres login
-const cat_filter=document.querySelector(".categories-filter");
-if (isLoggedIn === "true") {
-  button_modifier.style.display="block";
-  cat_filter.style.display="none";
-}
-// button valide image
-const submitBtn = document.querySelector('.form-ajouter-photo input[type="submit"]');
-submitBtn.disabled = true;
-function checkFormValidity() {
-    const title = document.querySelector('#title').value.trim();
-    const file = document.querySelector('#photo').files[0];
-    const category = document.querySelector('#select-category').value;
-
-    if (title && file && category) {
-        submitBtn.disabled = false;
+    if (isLoggedIn) {
+        localStorage.removeItem("isLoggedIn");
+        window.location.reload();
     } else {
-        submitBtn.disabled = true;
+        window.location.href = "/Portfolio-architecte-sophie-bluel/FrontEnd/login.html";
     }
+});
+
+// ----------------------------
+// ACTIONS POST LOGIN
+// ----------------------------
+const cat_filter = document.querySelector(".categories-filter");
+if (isLoggedIn) {
+    document.querySelector('.button-modifier').style.display = "block";
+    cat_filter.style.display = "none";
 }
-document.querySelector('#title').addEventListener('input', checkFormValidity);
-document.querySelector('#photo').addEventListener('change', checkFormValidity);
-document.querySelector('#select-category').addEventListener('change', checkFormValidity);

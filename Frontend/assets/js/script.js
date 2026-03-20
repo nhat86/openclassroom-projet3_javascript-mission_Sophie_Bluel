@@ -113,9 +113,19 @@ form.addEventListener('submit', async (e) => {
             return;
         }
 
-        // Optionnel : recharger la galerie ou modal après ajout
-        displayWorks();
-        displayWorksModal();
+        // Mise à jour dynamique sans rafraîchir la page
+        await displayWorks();
+        await displayWorksModal();
+
+        // Garder le modal d'ajout ouvert
+        modal2.style.display = 'none';
+        modal1.style.display = 'block';
+        body.style.background = "rgba(0,0,0,0.3)";
+
+        // Réinitialiser l'aperçu image
+        preview.src = "./assets/icons/picture-ajoute.png";
+        preview.style.width = "";
+
         form.reset();
         submitBtn.disabled = true;
 
@@ -154,7 +164,7 @@ login.addEventListener("click", () => {
         localStorage.removeItem("isLoggedIn");
         window.location.reload();
     } else {
-        window.location.href = "/Portfolio-architecte-sophie-bluel/FrontEnd/login.html";
+        window.location.href = "/FrontEnd/login.html";
     }
 });
 

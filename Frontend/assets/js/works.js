@@ -43,6 +43,12 @@ function createDeleteButton(workId, figure) {
         e.stopPropagation();
 
         await deleteWork(workId);
+
+        // Mise à jour dynamique de la galerie sans rechargement de page
+        await displayWorks();
+        await displayWorksModal();
+
+        // Supprimer le visuel immédiatement (fallback si displayWorksModal est lent)
         figure.remove();
     });
 

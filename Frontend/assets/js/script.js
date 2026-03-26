@@ -161,6 +161,7 @@ const login = document.querySelector(".login");
 login.textContent = isLoggedIn ? "logout" : "login";
 login.addEventListener("click", () => {
     if (isLoggedIn) {
+        localStorage.removeItem("token");
         localStorage.removeItem("isLoggedIn");
         window.location.reload();
     } else {
@@ -176,3 +177,29 @@ if (isLoggedIn) {
     document.querySelector('.button-modifier').style.display = "block";
     cat_filter.style.display = "none";
 }
+
+
+// ----------------------------
+// BARRE NOIRE EN HAUT DE LA PAGE (MODE CONNECTE)
+// ----------------------------
+function afficherBandeauAdmin() {
+    const token = localStorage.getItem("token");
+    let bandeau = document.getElementById("bandeau-admin");
+    console.log(token);
+    console.log(bandeau);
+    if (token && !bandeau) {
+        bandeau = document.createElement("div");
+        bandeau.id = "bandeau-admin";
+        bandeau.classList.add("bandeau-admin");
+        bandeau.innerHTML = `
+            <p><img src="assets/icons/Vector.png" alt="connecté">Mode édition</p>
+        `;
+
+        document.body.prepend(bandeau);
+    }
+    if (!token && bandeau) {
+        bandeau.remove();
+    }
+}
+
+afficherBandeauAdmin();

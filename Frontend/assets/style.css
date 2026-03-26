@@ -365,7 +365,14 @@ input[type="submit"]:disabled {
 	font-size: 14px;
 	font-weight: 500;
 }
-
+/* ===================== BANDEAU ADMIN ===================== */
+.bandeau-admin {
+    background-color: black;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+}
 /* ===================== DIVERS ===================== */
 .valide-img {
 	text-align: center;
